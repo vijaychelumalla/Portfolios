@@ -7,7 +7,11 @@ import HeroCanvas from "./HeroCanvas";
 import Magnetic from "./Magnetic";
 import Tilt from "./Tilt";
 
-export default function Hero() {
+interface HeroProps {
+  loading?: boolean;
+}
+
+export default function Hero({ loading = false }: HeroProps) {
   const [mounted, setMounted] = useState(false);
 
   // Mouse coords for parallax
@@ -78,11 +82,21 @@ export default function Hero() {
       className="min-h-screen flex items-center justify-center relative overflow-hidden pt-28 pb-16 px-6 max-w-6xl mx-auto z-10 w-full"
     >
       {/* 3D R3F Particle background */}
-      <HeroCanvas />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={loading ? { opacity: 0 } : { opacity: 1 }}
+        transition={{ duration: 2, delay: 1.4 }}
+        className="absolute inset-0 pointer-events-none"
+      >
+        <HeroCanvas />
+      </motion.div>
 
       {/* Parallax moving background blobs */}
       <motion.div 
         style={{ x: bgX, y: bgY }}
+        initial={{ opacity: 0 }}
+        animate={loading ? { opacity: 0 } : { opacity: 1 }}
+        transition={{ duration: 1.5, delay: 1.3 }}
         className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-blue-500/5 blur-[120px] pointer-events-none"
       />
 
@@ -91,7 +105,7 @@ export default function Hero() {
         <motion.div
           variants={entryVariants}
           initial="hidden"
-          animate="visible"
+          animate={loading ? "hidden" : "visible"}
           style={{ x: textX, y: textY }}
           className="lg:col-span-7 space-y-6 md:space-y-8 text-center lg:text-left flex flex-col items-center lg:items-start"
         >
@@ -110,21 +124,19 @@ export default function Hero() {
           </motion.div>
 
           {/* Heading */}
-          <div className="space-y-3">
-            <motion.p 
-              variants={childVariants}
+          <motion.div variants={childVariants} className="space-y-3">
+            <p 
               className="text-sm md:text-base font-semibold tracking-widest text-primary uppercase font-sans"
             >
               Backend & Full Stack Engineer
-            </motion.p>
-            <motion.h1 
-              variants={childVariants}
+            </p>
+            <h1 
               className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white font-display leading-[0.95] tracking-tight"
             >
               Vijay <br className="hidden lg:block" />
               <span className="bg-gradient-to-r from-blue-500 to-indigo-400 bg-clip-text text-transparent">Chelumalla</span>
-            </motion.h1>
-          </div>
+            </h1>
+          </motion.div>
 
           {/* Tagline */}
           <motion.p 
@@ -204,8 +216,8 @@ export default function Hero() {
         {/* Right Column: 3D Interactive Profile Avatar */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 30 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 1.2, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          animate={loading ? { opacity: 0, scale: 0.9, y: 30 } : { opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 80, damping: 15, delay: 1.15 }}
           className="lg:col-span-5 flex justify-center"
         >
           <Tilt maxTilt={15}>
@@ -251,8 +263,8 @@ export default function Hero() {
       {/* Scroll indicator animation */}
       <motion.div 
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2, duration: 0.8 }}
+        animate={loading ? { opacity: 0 } : { opacity: 1 }}
+        transition={{ delay: 1.3, duration: 0.8 }}
         className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer z-10"
         onClick={() => {
           document.getElementById("about")?.scrollIntoView({ behavior: "smooth" });

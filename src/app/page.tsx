@@ -51,7 +51,7 @@ export default function Home() {
 
         {/* Main Sections */}
         <main className="flex-1 flex flex-col relative z-10 w-full overflow-hidden">
-          <Hero />
+          <Hero loading={loading} />
           <About />
           <FrontendSkillsSection />
           <BackendSkillsSection />
