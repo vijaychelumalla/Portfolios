@@ -1,15 +1,34 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, Github, Sparkles, Terminal, Shield, Ticket, ChevronRight, X, CheckCircle2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { 
+  motion, 
+  AnimatePresence, 
+  useScroll, 
+  useTransform, 
+  useSpring, 
+  useMotionValue, 
+  useMotionTemplate 
+} from "framer-motion";
+import { 
+  ExternalLink, 
+  Github, 
+  Sparkles, 
+  Terminal, 
+  Shield, 
+  Ticket, 
+  ChevronRight, 
+  X, 
+  CheckCircle2 
+} from "lucide-react";
 import AnimatedHeading from "./AnimatedHeading";
-import Tilt from "./Tilt";
 import Magnetic from "./Magnetic";
+import ScrollStack, { ScrollStackItem } from "./ScrollStack";
 
 interface Project {
   title: string;
   category: "Full Stack" | "Backend API" | "Utility";
+  badge: string;
   description: string;
   longDescription: string;
   technologies: string[];
@@ -17,18 +36,673 @@ interface Project {
   github: string;
   demo?: string;
   icon: React.ReactNode;
-  gradient: string;
-  badge?: string;
+  themeColor: string;
 }
 
+// ----------------------------------------------------
+// LIVE CODE-VISUALIZATION DASHBOARD PREVIEWS
+// ----------------------------------------------------
+
+const AIInterviewPreview = ({ isHovered }: { isHovered: boolean }) => {
+  return (
+    <div className="w-full h-full bg-[#050B14]/90 rounded-2xl border border-white/5 overflow-hidden flex flex-col justify-between p-3 select-none relative">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.02)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
+      
+      <div className="flex items-center justify-between border-b border-white/5 pb-2 z-10">
+        <div className="flex items-center space-x-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500/80" />
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500/80" />
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500/80" />
+        </div>
+        <div className="text-[9px] text-gray-500 font-mono tracking-wider">AI_EVALUATOR_SERVICE</div>
+        <div className="text-[8px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-1.5 py-0.5 rounded font-mono uppercase font-semibold">Active</div>
+      </div>
+
+      <div className="grid grid-cols-12 gap-3 items-center z-10 flex-1 my-2">
+        <div className="col-span-6 h-full flex flex-col justify-center space-y-1.5">
+          <span className="text-[8px] text-gray-500 font-mono uppercase">Voice Input wave</span>
+          <div className="flex items-end justify-between h-14 px-2 bg-black/40 border border-white/5 rounded-lg py-1.5 relative overflow-hidden">
+            <div className="absolute top-1 left-1.5 flex items-center space-x-1">
+              <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[7px] text-red-400/80 font-mono">REC</span>
+            </div>
+            {Array.from({ length: 14 }).map((_, barIdx) => (
+              <motion.div
+                key={barIdx}
+                className="w-[3px] rounded-full bg-gradient-to-t from-blue-600 to-cyan-400"
+                animate={{
+                  height: isHovered 
+                    ? [8, Math.random() * 32 + 10, 8]
+                    : [10, Math.random() * 12 + 6, 10]
+                }}
+                transition={{
+                  duration: Math.random() * 0.5 + 0.3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: barIdx * 0.02
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="col-span-6 flex flex-col items-center justify-center relative">
+          <div className="relative w-14 h-14 flex items-center justify-center">
+            <svg className="w-full h-full transform -rotate-90">
+              <circle cx="28" cy="28" r="22" stroke="rgba(255,255,255,0.03)" strokeWidth="3.5" fill="transparent" />
+              <motion.circle
+                cx="28"
+                cy="28"
+                r="22"
+                stroke="#EAB308"
+                strokeWidth="3.5"
+                fill="transparent"
+                strokeDasharray={138}
+                initial={{ strokeDashoffset: 138 - (138 * 0.6) }}
+                animate={{
+                  strokeDashoffset: isHovered ? 138 - (138 * 0.96) : 138 - (138 * 0.6)
+                }}
+                transition={{ duration: 1.2, ease: "easeOut" }}
+              />
+            </svg>
+            <div className="absolute flex flex-col items-center justify-center">
+              <span className="text-xs font-bold text-white font-mono">4.8</span>
+              <span className="text-[6px] text-gray-500 uppercase font-semibold">Grade</span>
+            </div>
+          </div>
+
+          <div className="w-full mt-1.5 space-y-1">
+            <div className="flex justify-between text-[7px] text-gray-400 font-mono">
+              <span>Llama-3.3 Eval</span>
+              <span className="text-yellow-400">96%</span>
+            </div>
+            <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+              <motion.div 
+                className="h-full bg-yellow-500 rounded-full"
+                initial={{ width: "40%" }}
+                animate={{ width: isHovered ? "96%" : "60%" }}
+                transition={{ duration: 0.8 }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FoodiesPreview = ({ isHovered }: { isHovered: boolean }) => {
+  return (
+    <div className="w-full h-full bg-[#0E0606]/90 rounded-2xl border border-white/5 overflow-hidden flex flex-col justify-between p-3 select-none relative">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.015)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
+      
+      <div className="flex items-center justify-between border-b border-white/5 pb-2 z-10">
+        <div className="flex items-center space-x-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500/80" />
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500/80" />
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500/80" />
+        </div>
+        <div className="text-[9px] text-gray-500 font-mono tracking-wider">FOODIES_STORE_V4</div>
+        <div className="text-[8px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded font-mono uppercase font-semibold">Live</div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 z-10 flex-1 items-center my-2">
+        <div className="bg-white/5 border border-white/5 rounded-xl p-2 flex flex-col justify-between h-[64px] relative overflow-hidden group/item">
+          <div className="text-[8.5px] font-bold text-white truncate">Double Cheese Burger</div>
+          <div className="text-[7.5px] text-gray-500 font-mono">Cheddar & beef</div>
+          <div className="flex justify-between items-center mt-1 pt-1 border-t border-white/5">
+            <span className="text-[8.5px] font-bold text-emerald-400">$12.99</span>
+            <span className="text-[7.5px] bg-red-500/20 text-red-400 rounded-full px-1.5 py-0.2">ADD</span>
+          </div>
+        </div>
+
+        <div className="bg-white/5 border border-white/5 rounded-xl p-2 flex flex-col justify-between h-[64px] relative overflow-hidden group/item">
+          <div className="text-[8.5px] font-bold text-white truncate">Spicy Ramen Bowl</div>
+          <div className="text-[7.5px] text-gray-500 font-mono">Hot rich broth</div>
+          <div className="flex justify-between items-center mt-1 pt-1 border-t border-white/5">
+            <span className="text-[8.5px] font-bold text-emerald-400">$15.49</span>
+            <span className="text-[7.5px] bg-red-500/20 text-red-400 rounded-full px-1.5 py-0.2">ADD</span>
+          </div>
+        </div>
+      </div>
+
+      <motion.div 
+        className="bg-emerald-950/20 border border-emerald-500/20 rounded-lg p-1.5 flex items-center justify-between text-[8px] font-mono text-emerald-400 z-10"
+        animate={{
+          y: isHovered ? [0, -2, 0] : 0
+        }}
+        transition={{ duration: 0.4, ease: "easeInOut" }}
+      >
+        <div className="flex items-center space-x-1">
+          <span>🛒</span>
+          <span className="font-bold text-white">Cart:</span>
+          <span>2 Items</span>
+        </div>
+        <div className="flex items-center space-x-1.5">
+          <span>Subtotal:</span>
+          <span className="font-bold text-white">$28.48</span>
+          <span className="w-1 h-1 rounded-full bg-emerald-400 animate-ping" />
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+const HelpdeskPreview = ({ isHovered }: { isHovered: boolean }) => {
+  return (
+    <div className="w-full h-full bg-[#07090E]/90 rounded-2xl border border-white/5 overflow-hidden flex flex-col justify-between p-3 select-none relative">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.015)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
+      
+      <div className="flex items-center justify-between border-b border-white/5 pb-2 z-10">
+        <div className="flex items-center space-x-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500/80" />
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500/80" />
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500/80" />
+        </div>
+        <div className="text-[9px] text-gray-500 font-mono tracking-wider">HELPDESK_API_SWAGGER</div>
+        <div className="text-[8px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded font-mono uppercase font-semibold">Docs</div>
+      </div>
+
+      <div className="flex-1 bg-black/60 border border-white/5 rounded-xl p-2.5 font-mono text-[8px] text-gray-400 flex flex-col justify-between overflow-hidden z-10 my-2 h-[86px]">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between border-b border-white/5 pb-1 mb-1 text-gray-500">
+            <span>API ROUTING GATEWAY</span>
+            <span className="text-emerald-400 font-semibold">ONLINE</span>
+          </div>
+          <div className="flex items-center space-x-1 text-[7.5px]">
+            <span className="text-emerald-400 font-bold">POST</span>
+            <span className="text-white truncate max-w-[80px]">/api/tickets</span>
+            <span className="text-emerald-400/80 bg-emerald-950/20 px-1 rounded ml-auto">201</span>
+          </div>
+          <div className="flex items-center space-x-1 text-[7.5px]">
+            <span className="text-blue-400 font-bold">GET</span>
+            <span className="text-white truncate max-w-[80px]">/api/tickets/TKT-892</span>
+            <span className="text-blue-400/80 bg-blue-950/20 px-1 rounded ml-auto">200</span>
+          </div>
+        </div>
+
+        <div className="border-t border-white/5 pt-1 mt-1 text-[6.5px] text-gray-500 flex flex-col space-y-0.5">
+          <div className="flex justify-between items-center">
+            <span className="text-indigo-400">[09:41:02]</span>
+            <span className="truncate">RBAC Auth check: role verified</span>
+          </div>
+          <div className="flex justify-between items-center text-white/70">
+            <span className="text-indigo-400">[09:42:15]</span>
+            <span className="truncate">Ticket priority elevated to HIGH</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ----------------------------------------------------
+// TACTILE CLICK RIPPLE COMPONENT FOR BUTTONS
+// ----------------------------------------------------
+
+interface Ripple {
+  x: number;
+  y: number;
+  id: number;
+}
+
+const RippleButton = ({
+  href,
+  children,
+  className = "",
+  ariaLabel
+}: {
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+  ariaLabel?: string;
+}) => {
+  const [ripples, setRipples] = useState<Ripple[]>([]);
+  const buttonRef = useRef<HTMLAnchorElement>(null);
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const id = Date.now();
+    setRipples((prev) => [...prev, { x, y, id }]);
+  };
+
+  return (
+    <a
+      ref={buttonRef}
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`relative overflow-hidden cursor-pointer ${className}`}
+      onClick={handleClick}
+      aria-label={ariaLabel}
+    >
+      <span className="relative z-10 flex items-center justify-center gap-1.5">
+        {children}
+      </span>
+      <AnimatePresence>
+        {ripples.map((ripple) => (
+          <motion.span
+            key={ripple.id}
+            initial={{ scale: 0, opacity: 0.5 }}
+            animate={{ scale: 4, opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="absolute rounded-full bg-white/20 pointer-events-none"
+            style={{
+              left: ripple.x,
+              top: ripple.y,
+              width: "24px",
+              height: "24px",
+              transform: "translate(-50%, -50%)",
+            }}
+            onAnimationComplete={() => {
+              setRipples((prev) => prev.filter((r) => r.id !== ripple.id));
+            }}
+          />
+        ))}
+      </AnimatePresence>
+    </a>
+  );
+};
+
+// ----------------------------------------------------
+// PROJECT CARD: 3D PERSPECTIVE TILT + MICROINTERACTIONS
+// ----------------------------------------------------
+
+function ProjectCard({ 
+  project, 
+  idx 
+}: { 
+  project: Project; 
+  idx: number; 
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const [showIframe, setShowIframe] = useState(false);
+
+  // Motion Values for cursor tilt coords (-0.5 to 0.5)
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Springs to control card angles dynamically
+  const tiltX = useSpring(useTransform(mouseY, [-0.5, 0.5], [8, -8]), { stiffness: 120, damping: 20 });
+  const tiltY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-8, 8]), { stiffness: 120, damping: 20 });
+
+  // Spring to control card lift up y offset and border opacity glow
+  const cardY = useSpring(0, { stiffness: 120, damping: 20 });
+  const scale = useSpring(1, { stiffness: 150, damping: 18 });
+  const borderVal = useSpring(0.08, { stiffness: 120, damping: 20 });
+  const bgVal = useSpring(0.05, { stiffness: 120, damping: 20 });
+
+  // Parallax shifts inside the card mockup
+  const previewShiftX = useSpring(useTransform(mouseX, [-0.5, 0.5], [-10, 10]), { stiffness: 120, damping: 20 });
+  const previewShiftY = useSpring(useTransform(mouseY, [-0.5, 0.5], [-10, 10]), { stiffness: 120, damping: 20 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const xCoords = (e.clientX - rect.left) / rect.width - 0.5;
+    const yCoords = (e.clientY - rect.top) / rect.height - 0.5;
+    mouseX.set(xCoords);
+    mouseY.set(yCoords);
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    cardY.set(-12);
+    scale.set(1.02);
+    borderVal.set(0.24); // glowing border
+    bgVal.set(0.08); // brighter glass bg
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    mouseX.set(0);
+    mouseY.set(0);
+    cardY.set(0);
+    scale.set(1);
+    borderVal.set(0.08);
+    bgVal.set(0.05);
+  };
+
+  const cardBorder = useMotionTemplate`1px solid rgba(255, 255, 255, ${borderVal})`;
+  const cardBg = useMotionTemplate`rgba(255, 255, 255, ${bgVal})`;
+
+  // Render the specific visual dashboard or screenshot
+  const renderVisualMockup = () => {
+    switch (idx) {
+      case 0: return (
+        <div className="w-full h-full relative overflow-hidden rounded-2xl bg-black/40">
+          <motion.img
+            src="/ai_interview.png"
+            alt="AI Interview App Screenshot"
+            className="w-full h-full object-cover object-top"
+            animate={isHovered ? { scale: 1.08, y: -4 } : { scale: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          />
+        </div>
+      );
+      case 1: return (
+        <div className="w-full h-full relative overflow-hidden rounded-2xl bg-black/40">
+          <motion.img
+            src="/foodies.png"
+            alt="Foodies App Screenshot"
+            className="w-full h-full object-cover object-top"
+            animate={isHovered ? { scale: 1.08, y: -4 } : { scale: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          />
+        </div>
+      );
+      case 2: return (
+        <div className="w-full h-full relative overflow-hidden rounded-2xl bg-black/40">
+          <motion.img
+            src="/helpdesk.png"
+            alt="Helpdesk Ticketing System Screenshot"
+            className="w-full h-full object-cover object-top"
+            animate={isHovered ? { scale: 1.08, y: -4 } : { scale: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          />
+        </div>
+      );
+      default: return null;
+    }
+  };
+
+  // Entry transitions
+  const cardEntryVariants = {
+    hidden: { 
+      opacity: 0, 
+      y: 60, 
+      scale: 0.92, 
+      filter: "blur(8px)" 
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      filter: "blur(0px)",
+      transition: { 
+        duration: 0.8, 
+        ease: [0.16, 1, 0.3, 1] 
+      }
+    }
+  };
+
+  // Tech Badge container hover staggered reveal
+  const badgeContainer = {
+    hover: { transition: { staggerChildren: 0.04 } }
+  };
+
+  const badgeItem = {
+    initial: { y: 0, opacity: 0.8, scale: 1 },
+    hover: { 
+      y: -4, 
+      opacity: 1, 
+      scale: 1.05,
+      transition: { type: "spring", stiffness: 150, damping: 10 }
+    }
+  };
+
+  return (
+    <motion.div
+      ref={cardRef}
+      variants={cardEntryVariants}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        y: cardY,
+        scale,
+        rotateX: tiltX,
+        rotateY: tiltY,
+        transformStyle: "preserve-3d",
+        perspective: 1200
+      }}
+      className="relative rounded-[24px] overflow-hidden flex flex-col justify-between h-[540px] cursor-pointer group shadow-xl"
+    >
+      {/* Background glass board */}
+      <motion.div 
+        style={{
+          border: cardBorder,
+          background: cardBg,
+          backdropFilter: "blur(20px)"
+        }}
+        className="absolute inset-0 rounded-[24px] pointer-events-none z-0"
+      />
+
+      {/* Internal visual highlights glow */}
+      <div 
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-0 bg-radial-gradient"
+        style={{
+          background: `radial-gradient(circle at center, ${project.themeColor} 0%, transparent 65%)`
+        }}
+      />
+
+      {/* Card Border Glow */}
+      <div 
+        className="absolute inset-0 rounded-[24px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-0 border border-white/10"
+        style={{
+          boxShadow: `0 0 40px ${project.themeColor}20`,
+        }}
+      />
+
+      {/* Content wrapper */}
+      <div className="p-6 sm:p-8 flex-1 flex flex-col justify-between relative z-10 select-none">
+        
+        {/* Header Details */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <motion.div 
+                animate={isHovered ? { rotate: 8, scale: 1.05 } : { rotate: 0, scale: 1 }}
+                className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center shadow-inner"
+              >
+                {project.icon}
+              </motion.div>
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-sans">
+                {project.category}
+              </span>
+            </div>
+            <span className="text-[9px] px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-gray-300 font-sans font-medium uppercase tracking-wider">
+              {project.badge}
+            </span>
+          </div>
+
+          {/* Large Preview Area */}
+          <motion.div 
+            style={{
+              x: previewShiftX,
+              y: previewShiftY,
+              transformStyle: "preserve-3d"
+            }}
+            className="w-full h-[220px] rounded-2xl overflow-hidden mb-5 border border-white/5 relative bg-black/30 shadow-inner group-hover:border-white/10 transition-colors duration-300 z-20"
+          >
+            {showIframe && project.demo ? (
+              <div className="w-full h-full relative z-30">
+                <iframe
+                  src={project.demo}
+                  title={`${project.title} Demo`}
+                  className="w-full h-full border-0 bg-[#0A0A0A] pb-8"
+                  sandbox="allow-scripts allow-same-origin allow-popups"
+                />
+                {/* Exit Demo button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowIframe(false);
+                  }}
+                  className="absolute top-3 right-3 p-2 rounded-full bg-black/85 hover:bg-black/95 text-white border border-white/10 transition-colors shadow-lg z-40 cursor-pointer"
+                  title="Close Live View"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                {/* Helpful new-tab link for iframe blockages (Vercel SSO, browser tracking blockers) */}
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between bg-black/80 px-2.5 py-1.5 rounded-lg border border-white/5 text-[9px] font-sans text-gray-400 backdrop-blur-md z-40 select-none">
+                  <span>Blocked or loading issue?</span>
+                  <a
+                    href={project.demo}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-0.5"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Open in new tab <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <>
+                {renderVisualMockup()}
+                
+                {/* Hover Buttons Overlay - specifically on top of the mockup/photo */}
+                <AnimatePresence>
+                  {isHovered && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="absolute inset-0 bg-black/65 backdrop-blur-xs flex items-center justify-center gap-3 z-35 pointer-events-auto"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Magnetic range={0.25}>
+                        <RippleButton
+                          href={project.github}
+                          className="px-4.5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white text-xs font-bold transition-all shadow-lg flex items-center gap-2"
+                          ariaLabel="GitHub Repository"
+                        >
+                          <Github className="w-4 h-4" />
+                          <span>GitHub</span>
+                        </RippleButton>
+                      </Magnetic>
+
+                      {project.demo && (
+                        <Magnetic range={0.25}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowIframe(true);
+                            }}
+                            className="px-4.5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 cursor-pointer"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            <span>Live Demo</span>
+                          </button>
+                        </Magnetic>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
+            
+            {/* Vignette Overlay (Only shows when iframe is not active) */}
+            {!showIframe && <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none z-10" />}
+          </motion.div>
+
+          {/* Title & Desc */}
+          <h4 className="text-xl sm:text-2xl font-bold font-display text-white mb-2 group-hover:text-white/90 transition-colors">
+            {project.title}
+          </h4>
+          <p className="text-xs sm:text-sm text-gray-400 leading-relaxed line-clamp-2">
+            {project.description}
+          </p>
+        </div>
+
+        {/* Badges and Actions Panel */}
+        <div className="mt-4">
+          
+          {/* Tech Badges */}
+          <motion.div 
+            variants={badgeContainer}
+            animate={isHovered ? "hover" : "initial"}
+            className="flex flex-wrap gap-1.5 mb-6"
+          >
+            {project.technologies.slice(0, 4).map((tech, tIdx) => (
+              <motion.span 
+                key={tIdx} 
+                variants={badgeItem}
+                className="text-[10px] px-2.5 py-1 rounded-lg bg-white/5 text-gray-300 font-sans border border-white/5 hover:border-white/15 hover:bg-white/10 hover:text-white transition-all duration-300"
+              >
+                {tech}
+              </motion.span>
+            ))}
+            {project.technologies.length > 4 && (
+              <span className="text-[9px] px-2.5 py-1 text-gray-500 font-sans flex items-center">
+                +{project.technologies.length - 4} more
+              </span>
+            )}
+          </motion.div>
+
+          {/* Action Trigger Link / Info */}
+          <div className="flex items-center justify-between pt-3 border-t border-white/5 h-10 relative overflow-hidden">
+            {/* Left: Indicator Link (Hidden on Hover) */}
+            <motion.span 
+              animate={{
+                y: isHovered ? -25 : 0,
+                opacity: isHovered ? 0 : 1
+              }}
+              transition={{ duration: 0.35, ease: "easeInOut" }}
+              className="text-xs font-semibold text-blue-400 flex items-center gap-1 font-sans"
+            >
+              Explore Details <ChevronRight className="w-3.5 h-3.5" />
+            </motion.span>
+
+            {/* Right: Informational text (slides up) */}
+            <motion.div
+              animate={{
+                y: isHovered ? 0 : 30,
+                opacity: isHovered ? 1 : 0
+              }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute left-0 right-0 flex items-center justify-between text-[11px] font-sans text-gray-500"
+            >
+              <span>Click card for detailed features</span>
+              <span className="text-blue-400 font-medium">Read more</span>
+            </motion.div>
+          </div>
+        </div>
+
+      </div>
+    </motion.div>
+  );
+}
+
+// ----------------------------------------------------
+// MAIN PROJECTS SECTION CONTAINER
+// ----------------------------------------------------
+
 export default function Projects() {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  // Scroll linked values to morph background based on entry
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"]
+  });
+
+  const opacityBlue = useTransform(
+    scrollYProgress,
+    [0, 0.4, 0.6, 1],
+    [0, 0.85, 0.4, 0]
+  );
+
+  const opacityViolet = useTransform(
+    scrollYProgress,
+    [0, 0.4, 0.6, 1],
+    [0, 0.2, 0.85, 0]
+  );
 
   const projectsList: Project[] = [
     {
       title: "AI Interview App",
       category: "Full Stack",
       badge: "AI Showcase",
+      themeColor: "rgba(234,179,8,0.18)", // Gold Theme
       description: "An AI-powered mock interview platform generating custom questions, recording responses, and providing Llama-3.3-70b evaluated grading.",
       longDescription: "A full-stack candidate screening application. It generates specialized mock interview queues across five technical roles (Frontend, Backend, Fullstack, HR, DSA) and three difficulties. Responses are graded out of 5 with constructive strengths and weaknesses assessments using the Llama-3.3-70b-versatile LLM via the Groq SDK.",
       technologies: ["React 19", "React Router v7", "Node.js", "Express.js", "MongoDB", "Mongoose", "JWT", "Groq API (Llama 3.3)", "Axios"],
@@ -40,13 +714,13 @@ export default function Projects() {
       ],
       github: "https://github.com/vijaychelumalla/AI-Interview-App",
       demo: "https://ai-interview-app-hugd.vercel.app",
-      icon: <Sparkles className="w-6 h-6 text-yellow-400" />,
-      gradient: "from-amber-600/20 via-yellow-500/10 to-transparent border-yellow-500/20"
+      icon: <Sparkles className="w-5 h-5 text-yellow-400" />
     },
     {
       title: "Foodies App (Zomato Clone)",
       category: "Full Stack",
       badge: "Featured Full Stack",
+      themeColor: "rgba(239,68,68,0.14)", // Red Theme
       description: "A fast-loading Zomato clone with category browsing, cart calculations, shipping forms, order logs, and admin controls.",
       longDescription: "A full-scale food ordering application built with modern standards. Features high-performance state management using React Context API for shopping cart updates, custom registration forms, shipping checks, and backend services to process order registries.",
       technologies: ["React.js", "Vite", "Node.js", "Express.js", "MongoDB", "Mongoose", "Tailwind CSS v4", "JWT", "GitHub Actions"],
@@ -58,13 +732,13 @@ export default function Projects() {
       ],
       github: "https://github.com/vijaychelumalla/foodie-app",
       demo: "https://vijay-vijay21.vercel.app",
-      icon: <Terminal className="w-6 h-6 text-emerald-400" />,
-      gradient: "from-emerald-600/20 via-teal-500/10 to-transparent border-emerald-500/20"
+      icon: <Terminal className="w-5 h-5 text-red-400" />
     },
     {
       title: "Helpdesk / Ticketing System API",
       category: "Backend API",
       badge: "Swagger Documented",
+      themeColor: "rgba(59,130,246,0.16)", // Blue Theme
       description: "A secure CRM ticketing backend with role-based restrictions, comments, file attachments, and activity history logs.",
       longDescription: "A CRM helpdesk ticketing backend API. It enforces Role-Based Access Control (RBAC) across customers, support agents, and administrators. Supports attachment uploads, communication thread histories, dashboard aggregation metrics, and is fully documented via Swagger.",
       technologies: ["Node.js (ESM)", "Express.js", "MongoDB", "Mongoose ODM", "JWT", "bcryptjs", "Multer (File Upload)", "Swagger UI Docs"],
@@ -76,26 +750,7 @@ export default function Projects() {
         "Interactive documentation hosted under /api-docs with swagger-ui-express."
       ],
       github: "https://github.com/vijaychelumalla/helpdesk-ticketing-system",
-      icon: <Ticket className="w-6 h-6 text-blue-400" />,
-      gradient: "from-blue-600/20 via-indigo-500/10 to-transparent border-blue-500/20"
-    },
-    {
-      title: "Node.js Internship Projects Suite",
-      category: "Backend API",
-      badge: "Modular APIs",
-      description: "A collection of 6 backend API services covering core tasks (OTP verification, Cloudinary file uploads, messaging).",
-      longDescription: "A bundled suite of individual backend web applications created during a Node.js backend development internship. Standardizes MVC architecture, route protections, file management layers, and database connectors.",
-      technologies: ["Node.js", "Express.js", "MongoDB", "Mongoose", "JWT Auth", "Cloudinary SDK", "Nodemailer (OTP)", "Multer", "Cookie-Parser"],
-      features: [
-        "Advanced Authentication API: OTP-based user email verification, logins, password recovery.",
-        "Cloudinary Upload API: Direct file integration with Cloudinary cloud storage via Multer stream uploads.",
-        "Chat API: Backend database storage structure for messaging streams.",
-        "Role-Based Access Control: Modular security middlewares checking token privileges.",
-        "User Management API: CRUD route handlers."
-      ],
-      github: "https://github.com/vijaychelumalla/nodejs-inten-projects",
-      icon: <Shield className="w-6 h-6 text-indigo-400" />,
-      gradient: "from-indigo-600/20 via-purple-500/10 to-transparent border-indigo-500/20"
+      icon: <Ticket className="w-5 h-5 text-blue-400" />
     }
   ];
 
@@ -103,338 +758,162 @@ export default function Projects() {
     hidden: {},
     visible: {
       transition: {
-        staggerChildren: 0.15
+        staggerChildren: 0.12
       }
     }
   };
 
-  const cardVariants = {
-    hidden: { opacity: 0, scale: 0.9, y: 35 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      y: 0,
-      transition: { type: "spring" as const, stiffness: 100, damping: 15 }
-    }
-  };
-
-  // Badge animation sub-variants
-  const badgeContainer = {
-    hover: {
-      transition: { staggerChildren: 0.05 }
-    }
-  };
-
-  const badgeItem = {
-    initial: { opacity: 0.8, scale: 1 },
-    hover: { opacity: 1, scale: 1.05 }
-  };
+  // Ambient floating particle dots configuration
+  const particles = [
+    { size: 1.5, x: 12, y: 15, duration: 18, delay: 0 },
+    { size: 2.5, x: 78, y: 22, duration: 25, delay: -4 },
+    { size: 1.0, x: 45, y: 38, duration: 22, delay: -2 },
+    { size: 2.0, x: 28, y: 65, duration: 20, delay: -7 },
+    { size: 1.5, x: 88, y: 72, duration: 28, delay: -3 },
+    { size: 3.0, x: 62, y: 48, duration: 30, delay: -9 },
+    { size: 1.2, x: 5, y: 82, duration: 15, delay: -1 },
+    { size: 2.0, x: 92, y: 12, duration: 24, delay: -5 },
+    { size: 1.5, x: 52, y: 88, duration: 21, delay: -6 }
+  ];
 
   return (
-    <section id="projects" className="py-24 px-6 relative z-10 max-w-6xl mx-auto border-t border-white/5">
-      {/* Title */}
-      <div className="text-center mb-16">
-        <h2 className="text-xs font-semibold tracking-widest text-primary uppercase font-sans mb-3">
-          PORTFOLIO SHOWCASE
-        </h2>
-        <AnimatedHeading
-          text="Featured Projects"
-          tag="h3"
-          className="text-3xl sm:text-4xl md:text-5xl font-bold font-display text-white"
+    <motion.section 
+      id="projects" 
+      ref={sectionRef}
+      style={{ backgroundColor: "#0B0B0B" }}
+      className="relative z-10 w-full py-32 px-6 border-t border-white/5 overflow-hidden transition-all duration-700"
+    >
+      {/* Dynamic Ambient Background Layers (GPU Composited) */}
+      <motion.div 
+        className="absolute inset-0 pointer-events-none z-0" 
+        style={{
+          opacity: opacityBlue,
+          background: "radial-gradient(circle at 50% 50%, rgba(20,24,35,0.85) 0%, rgba(11,11,11,1) 100%)"
+        }}
+      />
+      <motion.div 
+        className="absolute inset-0 pointer-events-none z-0" 
+        style={{
+          opacity: opacityViolet,
+          background: "radial-gradient(circle at 50% 50%, rgba(16,14,35,0.85) 0%, rgba(11,11,11,1) 100%)"
+        }}
+      />
+
+      {/* Background Ambient Mesh Light Blobs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 opacity-40">
+        <motion.div
+          animate={{
+            x: [-60, 60, -60],
+            y: [-30, 90, -30],
+            scale: [0.85, 1.15, 0.85],
+          }}
+          transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-[15%] left-[5%] w-[450px] h-[450px] rounded-full bg-blue-600/10 blur-[130px]"
         />
-        <p className="text-gray-400 mt-4 max-w-md mx-auto text-sm sm:text-base">
-          Robust, verified codebase projects retrieved directly from my GitHub profile.
-        </p>
+        <motion.div
+          animate={{
+            x: [60, -60, 60],
+            y: [50, -50, 50],
+            scale: [1.15, 0.85, 1.15],
+          }}
+          transition={{ duration: 32, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+          className="absolute top-[25%] right-[5%] w-[550px] h-[550px] rounded-full bg-indigo-700/10 blur-[150px]"
+        />
+        <motion.div
+          animate={{
+            x: [-30, 30, -30],
+            y: [80, -20, 80],
+            scale: [0.9, 1.1, 0.9],
+          }}
+          transition={{ duration: 26, repeat: Infinity, ease: "easeInOut", delay: 6 }}
+          className="absolute bottom-0 left-[20%] w-[380px] h-[380px] rounded-full bg-violet-600/10 blur-[120px]"
+        />
       </div>
 
-      {/* Projects Grid */}
-      <motion.div 
-        variants={gridVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
-        className="grid grid-cols-1 md:grid-cols-2 gap-8"
-      >
-        {projectsList.map((project, idx) => (
-          <Tilt key={idx} maxTilt={8}>
-            <motion.div
-              variants={cardVariants}
-              whileHover="hover"
-              className={`glass p-6 sm:p-8 rounded-3xl border bg-gradient-to-br ${project.gradient} transition-all duration-500 group flex flex-col justify-between h-[460px] cursor-pointer hover:border-blue-500/40 relative overflow-hidden`}
-              onClick={() => setSelectedProject(project)}
-            >
-              {/* Background hover light ray glow */}
-              <div className="absolute -inset-24 bg-gradient-to-tr from-blue-500/0 via-blue-500/5 to-indigo-500/0 opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-700 pointer-events-none" />
-
-              <div>
-                {/* Header: Icon + Category + Badge */}
-                <div className="flex items-center justify-between mb-4 relative z-10">
-                  <div className="flex items-center space-x-3">
-                    <motion.div 
-                      variants={{ hover: { rotate: 10 } }}
-                      className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white"
-                    >
-                      {project.icon}
-                    </motion.div>
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider font-sans">
-                      {project.category}
-                    </span>
-                  </div>
-                  {project.badge && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-sans font-medium">
-                      {project.badge}
-                    </span>
-                  )}
-                </div>
-
-                {/* Visual mockup overlay/preview box (Zooms on hover) */}
-                <div className="w-full h-32 rounded-xl bg-black/40 border border-white/5 overflow-hidden mb-4 relative group-hover:border-blue-500/20 transition-colors z-10">
-                  {/* Browser top-bar */}
-                  <div className="w-full h-6 bg-white/5 border-b border-white/5 px-3 flex items-center justify-between">
-                    <div className="flex items-center space-x-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500/60" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/60" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500/60" />
-                    </div>
-                    <div className="text-[8px] text-gray-500 font-sans tracking-wide truncate max-w-[120px] select-none">
-                      {project.demo || "localhost:3000"}
-                    </div>
-                    <div className="w-3" />
-                  </div>
-                  {/* Mock content zoom container */}
-                  <div className="w-full h-full overflow-hidden relative">
-                    <motion.div
-                      variants={{
-                        hover: { scale: 1.06, y: -2 }
-                      }}
-                      transition={{ type: "spring", stiffness: 100, damping: 15 }}
-                      className="p-3 font-mono text-[9px] text-gray-500 space-y-1 h-full select-none pointer-events-none"
-                    >
-                      {idx === 0 && (
-                        <div className="space-y-1.5 text-blue-400/80">
-                          <div><span className="text-purple-400">const</span> AI_GRADE = <span className="text-yellow-400">"Llama-3.3-70b"</span>;</div>
-                          <div><span className="text-purple-400">await</span> ai.evaluateResponse(candidateAnswer);</div>
-                          <div className="text-[8px] text-emerald-400 bg-emerald-950/20 border border-emerald-500/10 px-2 py-0.5 rounded inline-block">Score: 4.8 / 5.0 (Excellent)</div>
-                        </div>
-                      )}
-                      {idx === 1 && (
-                        <div className="space-y-1 text-emerald-400/80">
-                          <div className="flex justify-between border-b border-white/5 pb-1">
-                            <span className="font-semibold text-white">Foodies Cart</span>
-                            <span className="text-gray-500">2 Items</span>
-                          </div>
-                          <div className="flex justify-between pt-1">
-                            <span>Double Cheese Burger</span>
-                            <span className="text-white">$12.99</span>
-                          </div>
-                          <div className="flex justify-between text-yellow-400 font-semibold pt-1">
-                            <span>Total (incl. tax)</span>
-                            <span>$24.50</span>
-                          </div>
-                        </div>
-                      )}
-                      {idx === 2 && (
-                        <div className="space-y-1 text-gray-400/80">
-                          <div><span className="text-purple-400">GET</span> /api/tickets <span className="text-emerald-400">200 OK</span></div>
-                          <div className="pl-2 border-l border-white/10 text-gray-500 space-y-0.5">
-                            <div>{`{`}</div>
-                            <div>&nbsp;&nbsp;id: <span className="text-yellow-400">"TKT-892"</span>,</div>
-                            <div>&nbsp;&nbsp;status: <span className="text-yellow-400">"Pending"</span>,</div>
-                            <div>&nbsp;&nbsp;role: <span className="text-yellow-400">"Support"</span></div>
-                            <div>{`}`}</div>
-                          </div>
-                        </div>
-                      )}
-                      {idx === 3 && (
-                        <div className="space-y-1 text-indigo-400/80">
-                          <div><span className="text-purple-400">import</span> {`{ Multer }`} <span className="text-purple-400">from</span> <span className="text-yellow-400">"multer"</span>;</div>
-                          <div><span className="text-purple-400">const</span> uploader = <span className="text-yellow-400">"Cloudinary"</span>;</div>
-                          <div className="text-[8px] text-indigo-300 bg-indigo-950/20 border border-indigo-500/10 px-2 py-0.5 rounded inline-block">Cloudinary Stream Verified</div>
-                        </div>
-                      )}
-                    </motion.div>
-                  </div>
-                </div>
-
-                {/* Title & Desc */}
-                <h4 className="text-xl sm:text-2xl font-bold font-display text-white mb-2 group-hover:text-primary transition-colors relative z-10">
-                  {project.title}
-                </h4>
-                <p className="text-sm text-gray-400 leading-relaxed line-clamp-2 relative z-10">
-                  {project.description}
-                </p>
-              </div>
-
-              {/* Bottom Actions */}
-              <div className="relative z-10">
-                {/* Tech Badges (Staggered hover animation) */}
-                <motion.div 
-                  variants={badgeContainer}
-                  className="flex flex-wrap gap-1.5 mb-6"
-                >
-                  {project.technologies.slice(0, 4).map((tech, tIdx) => (
-                    <motion.span 
-                      key={tIdx} 
-                      variants={badgeItem}
-                      className="text-[11px] px-2.5 py-0.5 rounded-md bg-white/5 text-gray-400 font-sans"
-                    >
-                      {tech}
-                    </motion.span>
-                  ))}
-                  {project.technologies.length > 4 && (
-                    <span className="text-[11px] px-1.5 py-0.5 text-gray-500 font-sans">
-                      +{project.technologies.length - 4} more
-                    </span>
-                  )}
-                </motion.div>
-
-                {/* Action trigger links */}
-                <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                  <span className="text-xs font-semibold text-blue-400 group-hover:text-blue-300 flex items-center gap-1 font-sans">
-                    Learn Details <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                  
-                  {/* Sliding container for Action buttons (Slide Upward) */}
-                  <div className="flex items-center space-x-3" onClick={(e) => e.stopPropagation()}>
-                    <motion.div
-                      variants={{
-                        initial: { y: 20, opacity: 0 },
-                        hover: { y: 0, opacity: 1 }
-                      }}
-                      initial="initial"
-                      className="flex space-x-2"
-                    >
-                      <Magnetic range={0.3}>
-                        <a
-                          href={project.github}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-                          aria-label="GitHub Repository"
-                        >
-                          <Github className="w-4 h-4" />
-                        </a>
-                      </Magnetic>
-                      
-                      {project.demo && (
-                        <Magnetic range={0.3}>
-                          <a
-                            href={project.demo}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-                            aria-label="Live Demo"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                        </Magnetic>
-                      )}
-                    </motion.div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </Tilt>
+      {/* Floating particles background overlay */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        {particles.map((p, idx) => (
+          <motion.div
+            key={idx}
+            className="absolute rounded-full bg-blue-500/15"
+            style={{
+              width: p.size,
+              height: p.size,
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+            }}
+            animate={{
+              y: ["0%", "100%", "0%"],
+              opacity: [0.1, 0.6, 0.1],
+            }}
+            transition={{
+              duration: p.duration,
+              repeat: Infinity,
+              ease: "linear",
+              delay: p.delay
+            }}
+          />
         ))}
-      </motion.div>
+      </div>
 
-      {/* Project Details Modal */}
-      <AnimatePresence>
-        {selectedProject && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
-            onClick={() => setSelectedProject(null)}
+      {/* Section Content Wrapper */}
+      <div className="max-w-6xl mx-auto relative z-10">
+        
+        {/* Title Group with cinematic scroll entry */}
+        <div className="text-center mb-24">
+          <motion.h2 
+            initial={{ opacity: 0, filter: "blur(8px)", y: 15 }}
+            whileInView={{ opacity: 0.6, filter: "blur(0px)", y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="text-[10px] tracking-[0.25em] text-blue-400 font-bold uppercase font-sans mb-4"
           >
-            <motion.div 
-              initial={{ scale: 0.95, y: 30, filter: "blur(5px)" }}
-              animate={{ scale: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ scale: 0.95, y: 30, filter: "blur(5px)" }}
-              transition={{ type: "spring", duration: 0.4 }}
-              className="w-full max-w-2xl max-h-[85vh] overflow-y-auto glass p-6 sm:p-8 rounded-3xl border border-white/10 shadow-2xl relative flex flex-col justify-between"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Close Button */}
-              <button 
-                onClick={() => setSelectedProject(null)}
-                className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
-                aria-label="Close modal"
-              >
-                <X className="w-5 h-5" />
-              </button>
+            PORTFOLIO SHOWCASE
+          </motion.h2>
 
-              <div className="space-y-6">
-                <div>
-                  <div className="inline-block text-xs font-semibold text-primary uppercase tracking-wider font-sans mb-2">
-                    {selectedProject.category}
-                  </div>
-                  <h4 className="text-2xl sm:text-3xl font-bold font-display text-white">
-                    {selectedProject.title}
-                  </h4>
-                </div>
+          <AnimatedHeading
+            text="Featured Projects"
+            tag="h3"
+            className="text-4xl sm:text-5xl md:text-6xl font-bold font-display text-white tracking-tight"
+          />
 
-                <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
-                  {selectedProject.longDescription}
-                </p>
+          <motion.p 
+            initial={{ opacity: 0, filter: "blur(8px)", y: 15 }}
+            whileInView={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+            className="text-gray-400 mt-6 max-w-xl mx-auto text-sm sm:text-base leading-relaxed"
+          >
+            A collection of projects showcasing backend engineering, scalable APIs, authentication systems, and full-stack development.
+          </motion.p>
+        </div>
 
-                <div className="space-y-3">
-                  <h5 className="font-display font-semibold text-white text-base">Key Features</h5>
-                  <ul className="grid grid-cols-1 gap-2 text-sm text-gray-400 font-sans">
-                    {selectedProject.features.map((feature, fIdx) => (
-                      <li key={fIdx} className="flex items-start gap-2">
-                        <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400 shrink-0 mt-0.5" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+        {/* Scroll Stacking Showcase */}
+        <div className="max-w-4xl mx-auto mt-16">
+          <ScrollStack
+            useWindowScroll={true}
+            className="window-scroll"
+            itemDistance={120}
+            itemStackDistance={35}
+            stackPosition="15%"
+            scaleEndPosition="5%"
+            baseScale={0.88}
+            itemScale={0.03}
+            blurAmount={1.5}
+          >
+            {projectsList.map((project, idx) => (
+              <ScrollStackItem key={idx}>
+                <ProjectCard 
+                  project={project} 
+                  idx={idx} 
+                />
+              </ScrollStackItem>
+            ))}
+          </ScrollStack>
+        </div>
 
-                <div className="space-y-3">
-                  <h5 className="font-display font-semibold text-white text-base">Full Tech Stack</h5>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProject.technologies.map((tech, tIdx) => (
-                      <span key={tIdx} className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/5 text-gray-300 font-sans">
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
+      </div>
 
-              {/* CTA buttons */}
-              <div className="flex gap-4 items-center justify-end mt-8 pt-6 border-t border-white/5">
-                <Magnetic range={0.2}>
-                  <a
-                    href={selectedProject.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-5 py-2.5 rounded-full border border-white/10 hover:border-white/20 bg-white/5 text-gray-200 hover:text-white font-semibold transition-all flex items-center gap-2 text-sm"
-                  >
-                    <Github className="w-4 h-4" />
-                    <span>GitHub Repository</span>
-                  </a>
-                </Magnetic>
-                
-                {selectedProject.demo && (
-                  <Magnetic range={0.2}>
-                    <a
-                      href={selectedProject.demo}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-5 py-2.5 rounded-full bg-primary hover:bg-primary-hover text-white font-semibold transition-all flex items-center gap-2 text-sm shadow-md"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      <span>Live Demo</span>
-                    </a>
-                  </Magnetic>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </section>
+    </motion.section>
   );
 }
