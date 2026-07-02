@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Server, Shield, Database, Layout } from "lucide-react";
+import { Server, Shield, Database, Layout, MapPin } from "lucide-react";
 import AnimatedHeading from "./AnimatedHeading";
 
 export default function About() {
@@ -69,14 +69,22 @@ export default function About() {
           className="lg:col-span-7 space-y-6 text-gray-400 text-base md:text-lg leading-relaxed"
         >
           <p>
-            I am a highly motivated <span className="text-white font-medium">Backend & Full Stack Developer</span> specializing in building robust web architectures. With a strong foundation in <span className="text-white font-medium">B.Tech Information Technology</span>, I enjoy turning complex database structures and API specifications into clean, scalable server code.
+            I'm a developer who builds things the best way I know how — try, break, curse quietly, fix, and repeat until it finally feels right. Totally normal process. Definitely not chaotic.
           </p>
           <p>
-            My key projects include a full-scale mock interview app integrating the <span className="text-white font-semibold">Llama-3.3-70b AI model</span> for candidate grading, and a CRM helpdesk ticking system with intricate role-based operations and real-time activity tracking.
+            I work with React, JavaScript, and full-stack tools, but the part that actually keeps me up at night (besides bugs, obviously) is the why — how an interface feels, how users actually behave, and how one tiny detail can make or break the whole experience.
           </p>
           <p>
-            I focus on writing modular code, designing clean API paths documented via Swagger, and employing standard middleware practices (CORS, file-handling via Multer, token verification) to deliver production-grade products.
+            If I come across a website that looks too good? I don't just admire it and move on like a normal person. I rebuild it. From scratch. Because apparently that's just how I learn — dissecting structure, training my eye for design, and convincing myself I'll stop after just one more component.
           </p>
+          <p>
+            I'm not here to just push code and collect PRs. I'm here to build things that are clean, thoughtful, and actually enjoyable to use — and to get a little better (and a little more humbled) with every project.
+          </p>
+          <div className="pt-2 flex items-center gap-2 text-gray-400 text-sm">
+            <MapPin className="w-4 h-4 text-blue-500" />
+            <span className="text-gray-500">Location:</span>
+            <span className="text-white font-medium">Gujarat, India</span>
+          </div>
 
           {/* Quick Metrics */}
           <div className="grid grid-cols-3 gap-6 pt-6">
